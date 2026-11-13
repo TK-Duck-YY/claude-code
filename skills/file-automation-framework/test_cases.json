@@ -1,0 +1,206 @@
+{
+  "test_suite": "file-automation-framework",
+  "test_cases": [
+    {
+      "id": "TC001",
+      "category": "語言推薦邏輯",
+      "scenario": "用戶要在 Excel 中自動化大量薪資計算與樞紐分析",
+      "input": {
+        "task_description": "我需要每月自動計算員工薪資，包含基本薪、補助、扣款，最後生成樞紐分析表。原始主檔是 master_payroll.xlsx，需要保護它。",
+        "tools_mentioned": ["Excel", "pivot table", "formula"],
+        "project_background": "財務部門，非程式人員"
+      },
+      "expected_output": {
+        "recommended_languages": ["VBA", "Python"],
+        "primary_recommendation": "VBA",
+        "reasoning": "直接在 Excel 內運行，使用者無需開終端；若跨平台需求則選 Python"
+      },
+      "assertion": "推薦語言應包含 VBA 或 Python 之一"
+    },
+    {
+      "id": "TC002",
+      "category": "語言推薦邏輯",
+      "scenario": "用戶需要批量合併 PDF 並提取特定內容",
+      "input": {
+        "task_description": "我有 100 份合約 PDF，需要自動提取簽署日期、金額、當事人，最後輸出為 CSV。原始 PDF 不能動。",
+        "tools_mentioned": ["PDF", "extract", "batch"],
+        "project_background": "法務部門，有基本 Python 經驗"
+      },
+      "expected_output": {
+        "recommended_languages": ["Python"],
+        "primary_recommendation": "Python",
+        "reasoning": "PyPDF2/pdfplumber 跨平台，易於維護，可處理批量操作"
+      },
+      "assertion": "推薦語言應為 Python；提及 PyPDF2 或 pdfplumber 等套件"
+    },
+    {
+      "id": "TC003",
+      "category": "語言推薦邏輯",
+      "scenario": "用戶在 Linux 伺服器上需要監視資料夾自動處理新上傳的 CSV",
+      "input": {
+        "task_description": "我們的 Linux 伺服器每天收到 CSV 檔案，需要自動驗證格式、去重、計算統計，然後輸出結果。",
+        "tools_mentioned": ["Linux", "CSV", "watch folder", "bash"],
+        "project_background": "資訊部門，習慣 Bash"
+      },
+      "expected_output": {
+        "recommended_languages": ["Bash", "Python"],
+        "primary_recommendation": "Bash + Python",
+        "reasoning": "Bash 用 inotifywait 監視；Python 處理數據邏輯"
+      },
+      "assertion": "推薦應包含 Bash 或提及 inotifywait 監視工具"
+    },
+    {
+      "id": "TC004",
+      "category": "檔名規範與覆蓋",
+      "scenario": "同一天內同一個檔案被處理多次",
+      "input": {
+        "original_filename": "report.xlsx",
+        "system_date": "2024-03-15",
+        "processing_times": [1, 2, 3],
+        "same_day": true
+      },
+      "expected_output": {
+        "first_output": "report_240315.xlsx",
+        "second_output": "report_240315.xlsx (覆蓋)",
+        "third_output": "report_240315.xlsx (覆蓋)"
+      },
+      "assertion": "同日期輸出檔名相同，後次覆蓋前次，日誌記錄覆蓋事實"
+    },
+    {
+      "id": "TC005",
+      "category": "檔名規範與覆蓋",
+      "scenario": "不同日期的輸出",
+      "input": {
+        "original_filename": "contract_summary.pdf",
+        "processing_dates": ["2024-03-15", "2024-03-16", "2024-03-17"],
+        "same_day": false
+      },
+      "expected_output": {
+        "output_day1": "contract_summary_240315.pdf",
+        "output_day2": "contract_summary_240316.pdf",
+        "output_day3": "contract_summary_240317.pdf"
+      },
+      "assertion": "不同日期生成不同檔名，各自獨立，不互相影響"
+    },
+    {
+      "id": "TC006",
+      "category": "檔名規範",
+      "scenario": "檔案名包含多個點或特殊字元",
+      "input": {
+        "original_filename": "data.backup.2024.xlsx",
+        "system_date": "2024-03-15",
+        "processing_count": 1
+      },
+      "expected_output": {
+        "output": "data.backup.2024_240315.xlsx"
+      },
+      "assertion": "只在最後一個點前插入日期，不破壞副檔名"
+    },
+    {
+      "id": "TC007",
+      "category": "原始文件保護",
+      "scenario": "驗證原始文件在處理後保持完整",
+      "input": {
+        "original_file": "salary_master.xlsx",
+        "original_file_size": 2560000,
+        "original_file_modified_time": "2024-03-14 09:00:00",
+        "processing_duration": "5 minutes"
+      },
+      "expected_output": {
+        "original_file_size_after": 2560000,
+        "original_file_modified_time_after": "2024-03-14 09:00:00",
+        "status": "unchanged"
+      },
+      "assertion": "原始檔案大小和修改時間戳完全相同，未被修改"
+    },
+    {
+      "id": "TC008",
+      "category": "原始文件保護",
+      "scenario": "驗證複製副本被正確處理，原始不動",
+      "input": {
+        "original_file": "template.docx",
+        "operation": "search_and_replace",
+        "find_text": "{{EMPLOYEE_NAME}}",
+        "replace_text": "John Doe"
+      },
+      "expected_output": {
+        "original_file_content": "Contains {{EMPLOYEE_NAME}} (unchanged)",
+        "output_file_content": "Contains John Doe",
+        "output_filename_pattern": "template_YYMMDD.docx"
+      },
+      "assertion": "原始檔案仍含 {{EMPLOYEE_NAME}}，輸出檔案包含替換後的內容"
+    },
+    {
+      "id": "TC009",
+      "category": "錯誤處理",
+      "scenario": "原始檔案缺失時的警示",
+      "input": {
+        "source_folder": "/data/source/",
+        "expected_file": "reference.xlsx",
+        "file_exists": false
+      },
+      "expected_output": {
+        "system_notification": "System alert triggered",
+        "log_entry": "ERROR: Original file not found - reference.xlsx",
+        "process_status": "aborted"
+      },
+      "assertion": "應彈出系統通知，記錄日誌，流程中止"
+    },
+    {
+      "id": "TC010",
+      "category": "錯誤處理",
+      "scenario": "檔案被鎖定（他人開啟中）",
+      "input": {
+        "original_file": "active_report.xlsx",
+        "file_locked": true,
+        "lock_reason": "opened by another user"
+      },
+      "expected_output": {
+        "retry_attempts": 3,
+        "retry_interval_seconds": 2,
+        "final_status": "success or error after retries"
+      },
+      "assertion": "應重試 3 次，每次間隔 2 秒；成功則繼續，失敗則通知"
+    },
+    {
+      "id": "TC011",
+      "category": "工作流程",
+      "scenario": "完整的 Excel 薪資計算流程",
+      "input": {
+        "original_file": "payroll_master.xlsx",
+        "operations": ["validate_structure", "calculate_salary", "aggregate_by_department"],
+        "business_logic": "Apply 10% bonus if performance_score > 80"
+      },
+      "expected_output": {
+        "step1": "Verify payroll_master.xlsx exists and unchanged",
+        "step2": "Copy to temporary location",
+        "step3": "Execute calculations on copy",
+        "step4": "Output as payroll_master_240315.xlsx",
+        "step5": "Verify original is still intact"
+      },
+      "assertion": "五步工作流程全部完成，原始檔案未變"
+    },
+    {
+      "id": "TC012",
+      "category": "日誌與紀錄",
+      "scenario": "驗證日誌記錄格式與內容",
+      "input": {
+        "processing_date": "2024-03-15",
+        "operations_performed": ["validate", "copy", "process", "output"]
+      },
+      "expected_output": {
+        "log_filename": "automation_log_20240315.txt",
+        "log_entries_format": "[YYYY-MM-DD HH:MM:SS] [INFO/WARNING/ERROR] {description}",
+        "required_entries": [
+          "開始處理檔案",
+          "驗證原始文件",
+          "複製副本",
+          "執行業務邏輯",
+          "輸出檔案",
+          "處理完成"
+        ]
+      },
+      "assertion": "日誌檔名、格式、必需項目都符合規範"
+    }
+  ]
+}
