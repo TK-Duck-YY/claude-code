@@ -17,7 +17,7 @@
 
 ## 3. 連結
 沿用 SKILL.md 步驟 5，使用大眾運輸模式。另外可加：
-- 站牌位置：Apple `https://maps.apple.com/?q=<站牌名>`；Google `https://www.google.com/maps/search/?api=1&query=<站牌名>`
+- 站牌位置：Apple `https://maps.apple.com/?ll=<緯度>,<經度>&q=<站牌名>`；Google `https://www.google.com/maps/search/?api=1&query=<緯度>,<經度>`。座標照 SKILL.md 步驟 3.5 取得，兩個連結座標必須相同；查不到座標才退回只用站牌名，並標示「未經雙來源核對」。
 - 日本地名在網址中用日文。
 
 ## 4. 回覆格式
