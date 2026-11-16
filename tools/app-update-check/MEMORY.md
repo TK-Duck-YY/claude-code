@@ -36,6 +36,6 @@ results.json 每次被覆寫、只含查得到更新來源的 App、也沒有識
 - A：只加深應用程式資料夾的層數 → 抓不到裝在 `~/Library` 的元件。
 - B：改用 Spotlight（`mdfind`）找全機 App → 依賴 Spotlight 索引（這台的索引曾兩次膨脹到約 46 GB）；結果混雜垃圾桶、外接磁碟與 App 內部小程式，要另寫過濾；排程背景執行的行為未實測。
 
-**待確認：** 排程在背景執行時，讀取 `~/Library` 各資料夾是否會跳出 macOS 權限詢問（已排除已知會詢問的資料容器，但未實測）。若跳出詢問，把該資料夾名稱加進 `LIBRARY_SKIP`。
+**實測（2026-11-16 19:58，使用者手動執行「檢查App更新.app」）：** 沒有跳出任何 macOS 權限詢問；清冊 96 → 99 個，寫入一行 `scope_change`（`newly_listed` 3：AutoCAD 2026、AutoCAD Plot Style Editor 2026、Remove AutoCAD 2026）；`~/Library` 第一層 0 個（中華電信元件已移除）；無「移除」紀錄、無 `__pycache__`。日後若排程跳出權限詢問，把該資料夾名稱加進 `LIBRARY_SKIP`。
 
 **測試：** 模擬資料夾測試 6 項全過（第三層 App 有列入、第四層與 .app 內部不列入、`~/Library` 第一層有列入、跳過清單有效、範圍變更不算新增、數量驟減時不覆寫）。
