@@ -16,3 +16,13 @@
 - 不收：19 個 Anthropic 內建 skill（docx、xlsx、pptx、pdf、skill-creator、canvas-design 等），因官方會自動更新，自存副本會過期。
 
 **隱私處理**：個人姓名與公司資料夾路徑已遮蔽；repo 維持私人。
+
+## 2026-11-16 同步 mac-health-check 新版與 app-update-check 工具
+
+**決定**：以 base64 同步包（SHA-256 驗證通過）更新 `skills/mac-health-check/SKILL.md`，並新增 `tools/app-update-check/`（check_updates.py、app_inventory.py、MEMORY.md）。
+
+**原因**：mac-health-check 新增 Path C（已刪除 App 的殘留檔案與權限清理），需要 app_inventory.py 產出的 App 清冊與累積移除紀錄才能自動找出已移除的 App；工具與 skill 一起納入版本控管。
+
+**放棄的選項**：
+- 只更新 SKILL.md、不收工具程式：Path C 依賴的清冊程式會沒有版本紀錄。
+- 工具放在 skills/ 底下：它是獨立排程程式、不是 skill，故另開 tools/ 目錄。
