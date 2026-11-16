@@ -20,3 +20,22 @@ results.json 每次被覆寫、只含查得到更新來源的 App、也沒有識
 **否決的做法：**
 - B：由 mac-health-check 自己存清冊 → 只在健檢時記錄，兩次健檢之間裝了又刪的 App 會漏。
 - C：只做全面盤點、不比新舊 → 每次從頭判斷，慢且誤判多（仍保留作為補充，抓基準建立之前就刪掉的 App）。
+
+## 2026-11-16：擴大清冊掃描範圍（SCOPE_VERSION 2）
+
+**決定：** 採方案 C——
+- 三個應用程式資料夾從「往下一層」改成「往下三層」（不進入 .app 內部、不跟隨捷徑）。
+- 另外掃 `~/Library` 每個資料夾的第一層 `.app`，`LIBRARY_SKIP` 清單裡的資料夾不進去：其他 App 的資料容器（Containers、Group Containers 等）、個人資料與受保護資料夾（Mail、Messages、Safari 等）、雲端與快取（CloudStorage、Caches、Metadata 等）。
+- `inventory.json` 加上 `scope` 欄位。範圍改變的第一次執行，新看到的 App 不記成「新增」，只寫一行 `scope_change`（含 `newly_listed` 數量）；「移除」照常記錄。
+
+**為什麼：** 健檢時清冊漏掉兩個仍在使用的 App，差點被當成殘留刪掉：
+- AutoCAD 2026：裝在 `/Applications/Autodesk/AutoCAD 2026/`，第兩層以下。
+- 中華電信憑證元件 CHTSCTokenApp：裝在 `~/Library/HiPKILocalSignServer/`，不在應用程式資料夾。
+
+**否決的做法：**
+- A：只加深應用程式資料夾的層數 → 抓不到裝在 `~/Library` 的元件。
+- B：改用 Spotlight（`mdfind`）找全機 App → 依賴 Spotlight 索引（這台的索引曾兩次膨脹到約 46 GB）；結果混雜垃圾桶、外接磁碟與 App 內部小程式，要另寫過濾；排程背景執行的行為未實測。
+
+**待確認：** 排程在背景執行時，讀取 `~/Library` 各資料夾是否會跳出 macOS 權限詢問（已排除已知會詢問的資料容器，但未實測）。若跳出詢問，把該資料夾名稱加進 `LIBRARY_SKIP`。
+
+**測試：** 模擬資料夾測試 6 項全過（第三層 App 有列入、第四層與 .app 內部不列入、`~/Library` 第一層有列入、跳過清單有效、範圍變更不算新增、數量驟減時不覆寫）。
