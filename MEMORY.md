@@ -26,3 +26,21 @@
 **放棄的選項**：
 - 只更新 SKILL.md、不收工具程式：Path C 依賴的清冊程式會沒有版本紀錄。
 - 工具放在 skills/ 底下：它是獨立排程程式、不是 skill，故另開 tools/ 目錄。
+
+## 2026-11-16 移除 Desktop Commander，mac-health-check 改寫
+
+**決定**：移除 Claude 的 Desktop Commander 外掛；`skills/mac-health-check/SKILL.md` 刪除 Path A（Desktop Commander 深度掃描）與「先判斷有沒有連上」的步驟，改成固定流程（CPU／記憶體 → 硬碟 → 電池與維護 → 評分），只用 computer-use 背景工具與 device_bash；需要 macOS 指令的數據改為列出指令請使用者在 Terminal 執行後貼回。
+
+**原因**：
+- Desktop Commander 靠 `npx`（Node.js）啟動，本機沒裝 Node.js，至少從 2026-11-05 起每次都啟動失敗。
+- 健檢與清殘留在沒有它的情況下已能完成；真的需要在 Mac 上跑終端機指令時，已有 Claude Code。
+- 外掛標示「無需詢問即可執行程式碼」，留著不用不符合「越精實越好」的目標；它附帶的 skill 也會跟 mac-health-check 搶觸發詞。
+
+**放棄的選項**：
+- 安裝官方 Node.js（nodejs.org）保留外掛：多一套執行環境，換到的只有在對話裡直接跑 Mac 指令。
+- 用 Homebrew 安裝 Node.js：要先多裝一套 Homebrew。
+- 只關閉外掛開關、不移除：效果相同，但使用者選擇直接移除。
+
+**同時修正**：
+- Path C 的安裝檢查改以系統查詢為主（`computer_list_apps` 用廠商關鍵字查、`computer_resolve_access` 看 `didYouMean`），App 清冊降為線索：清冊只掃應用程式資料夾往下一層，會漏掉裝得更深的 App 與裝在 `~/Library` 的元件。
+- 保護區刪除改用實測可行的背景方法（Go → Library、展開三角形、核對路徑列、File → Move to Trash），全螢幕控制降為備案。
