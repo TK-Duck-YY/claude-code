@@ -141,15 +141,15 @@ uptime; pmset -g batt | head -n 2; system_profiler SPPowerDataType 2>/dev/null |
 ### C0. 先讀 App 清冊（2026-11-16 起）
 
 使用者的「App更新檢查」程式（`~/Documents/Claude/App更新檢查`，有排程自動執行）每次執行都會透過 `app_inventory.py` 產出：
-- `inventory.json`：已安裝的 App（`/Applications`、`/System/Applications`、`~/Applications` 與往下一層），每筆有 `name`、`bundle_id`、`version`、`path`、`app_store`，另有 `generated_at`。
-- `inventory_changes.jsonl`：累積的變動紀錄，一行一筆，`change` 為 `baseline`／`removed`／`added`，只增不刪。
+- `inventory.json`：已安裝的 App，每筆有 `name`、`bundle_id`、`version`、`path`、`source`、`app_store`，另有 `generated_at` 與 `scope`。掃描範圍（`scope` = 2，2026-11-16 起）：`/Applications`、`/System/Applications`、`~/Applications` 往下三層，加上 `~/Library` 每個資料夾的第一層 `.app`（`source` = `library`；Containers、Group Containers、Caches 等受保護或常變動的資料夾不掃）。
+- `inventory_changes.jsonl`：累積的變動紀錄，一行一筆，`change` 為 `baseline`／`removed`／`added`／`scope_change`，只增不刪。`scope_change` 代表掃描範圍擴大，當次新看到的 App（`newly_listed` 個）早就裝著，不是新安裝。
 
 每次走 Path C（或完整健檢）時：
 1. 申請該資料夾的存取權（唯讀），讀這兩個檔。檔案不存在代表排程還沒跑過新版，請使用者先執行一次「檢查App更新.app」。
 2. `generated_at` 超過 7 天代表排程可能沒在跑，提醒使用者。
 3. **已移除的 App**：取 `change` = `removed` 的項目（之後又出現同一 `bundle_id` 的 `added` 代表重新安裝，跳過），用 `bundle_id` 與廠商前綴去 C2 掃描殘留。同一筆紀錄下次還會出現，掃不到殘留就回報「已清乾淨」。
 4. **全面盤點（補充）**：把 `~/Library` 各子資料夾（Application Support、Containers、Group Containers、Preferences、Caches、HTTPStorages、LaunchAgents 等）裡的名稱，對照 `inventory.json` 的 `bundle_id` 與廠商前綴，找不到主人的列為「疑似殘留」。`com.apple.*` 與系統項目、C1 的共用資料、Path C 禁區略過。**「疑似殘留」一律列清單請使用者確認，不自動刪。**
-5. **清冊有盲點（2026-11-16 實測）**：它只掃到應用程式資料夾往下一層，所以裝在更深處的 App（例如 `應用程式/Autodesk/AutoCAD 2026/`）和裝在其他位置的元件（例如中華電信憑證元件 CHTSCTokenApp 裝在 `~/Library/HiPKILocalSignServer`）都不在清冊上。**「清冊上沒有」只是線索，不是證據**，每一組都要過 C1 的安裝檢查。
+5. **清冊仍有盲點**：2026-11-16 前只掃往下一層，漏了 AutoCAD 2026（`應用程式/Autodesk/AutoCAD 2026/`）與中華電信憑證元件 CHTSCTokenApp（`~/Library/HiPKILocalSignServer`），已擴大範圍修正。現在仍看不到的：應用程式資料夾第四層以下、`~/Library` 第二層以下（例如 `Application Support/<廠商>/xxx.app`）、跳過清單裡的資料夾、其他位置。所以 **「清冊上沒有」只是線索，不是證據**，每一組都要過 C1 的安裝檢查。
 6. 不要修改這兩個檔案，它們由程式管理。
 
 ### C1. 判斷擁有者是否還在用
