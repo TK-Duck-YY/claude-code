@@ -144,12 +144,15 @@ def prepare_data(df, chart_type):
 **安裝依賴**
 
 ```bash
-pip install python-pptx pandas openpyxl --break-system-packages
+pip install python-pptx pandas openpyxl lxml --break-system-packages
 ```
 
 **版面常數（4:3，10 × 7.5 英吋）**
 
 ```python
+import copy
+
+from lxml import etree
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
@@ -263,6 +266,68 @@ def create_chart_slide(df, chart_type, title, category_col, value_cols,
     return prs
 
 
+def _make_combo_chart(chart):
+    """把第二個系列改成折線，並放到右側座標軸。
+
+    python-pptx 的直條系列沒有 chart_type 可改，指定折線會直接失敗，
+    組合圖整張做不出來。這裡改寫圖表 XML：直條留第一個系列，第二個系列
+    移到折線圖，並加一組右側數值軸。
+    """
+    C = "http://schemas.openxmlformats.org/drawingml/2006/chart"
+    q = lambda tag: f"{{{C}}}{tag}"
+    plot_area = chart._chartSpace.find(f".//{q('plotArea')}")
+    bar = plot_area.find(q("barChart"))
+    series_nodes = bar.findall(q("ser"))
+    if len(series_nodes) < 2:
+        return
+    line_ser = series_nodes[1]
+    bar.remove(line_ser)
+    for tag in ("invertIfNegative", "shape"):
+        node = line_ser.find(q(tag))
+        if node is not None:
+            line_ser.remove(node)
+    marker = etree.SubElement(line_ser, q("marker"))
+    etree.SubElement(marker, q("symbol")).set("val", "circle")
+    line_ser.remove(marker)
+    anchor = line_ser.find(q("dLbls"))
+    if anchor is None:
+        anchor = line_ser.find(q("cat"))
+    anchor.addprevious(marker)
+    etree.SubElement(line_ser, q("smooth")).set("val", "0")
+    line = etree.Element(q("lineChart"))
+    etree.SubElement(line, q("grouping")).set("val", "standard")
+    etree.SubElement(line, q("varyColors")).set("val", "0")
+    line.append(line_ser)
+    etree.SubElement(line, q("marker")).set("val", "1")
+    etree.SubElement(line, q("axId")).set("val", "60000001")
+    etree.SubElement(line, q("axId")).set("val", "60000002")
+    bar.addnext(line)
+    cat_ax = plot_area.find(q("catAx"))
+    val_ax = plot_area.find(q("valAx"))
+    cat2 = copy.deepcopy(cat_ax)
+    val2 = copy.deepcopy(val_ax)
+    cat2.find(q("axId")).set("val", "60000001")
+    cat2.find(q("crossAx")).set("val", "60000002")
+    deleted = cat2.find(q("delete"))
+    if deleted is None:
+        deleted = etree.Element(q("delete"))
+        cat2.find(q("scaling")).addnext(deleted)
+    deleted.set("val", "1")
+    val2.find(q("axId")).set("val", "60000002")
+    val2.find(q("crossAx")).set("val", "60000001")
+    pos = val2.find(q("axPos"))
+    if pos is not None:
+        pos.set("val", "r")
+    grid = val2.find(q("majorGridlines"))
+    if grid is not None:
+        val2.remove(grid)
+    crosses = val2.find(q("crosses"))
+    if crosses is not None:
+        crosses.set("val", "max")
+    val_ax.addnext(cat2)
+    cat2.addnext(val2)
+
+
 def create_mixed_chart_slide(df, title, category_col, bar_col, line_col,
                               bullet_points=None, add_banner=True):
     prs = Presentation()
@@ -284,8 +349,10 @@ def create_mixed_chart_slide(df, title, category_col, bar_col, line_col,
     chart = slide.shapes.add_chart(
         XL_CHART_TYPE.COLUMN_CLUSTERED, cx, cy, cw, ch, chart_data
     ).chart
-    chart.plots[0].series[1].chart_type = XL_CHART_TYPE.LINE_MARKERS
+    # 先套顏色與圖例（此時兩個系列都還是直條），再把第二個系列改成折線。
     apply_chart_style(chart)
+    _make_combo_chart(chart)
+    chart.plots[1].series[0].format.line.color.rgb = RGBColor(0xDC, 0x26, 0x26)
 
     if use_split:
         _add_bullet_panel(slide, bullet_points, bullet_y, bullet_h)
