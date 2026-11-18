@@ -60,8 +60,8 @@ process_file() {
     fi
     mv "$temp_file.tmp" "$temp_file"
     
-    # 排序（按姓名）
-    if ! sort -t',' -k1 "$temp_file" > "$temp_file.tmp"; then
+    # 排序（按姓名）。整檔一起排會把標題列排進資料裡，所以先留住第一行。
+    if ! { head -n 1 "$temp_file"; tail -n +2 "$temp_file" | sort -t',' -k1,1; } > "$temp_file.tmp"; then
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] 排序失敗" >> "$LOG_FILE"
         return 1
     fi
