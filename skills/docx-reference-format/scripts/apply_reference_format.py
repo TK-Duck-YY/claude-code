@@ -28,6 +28,7 @@ import argparse
 import re
 import shutil
 import sys
+import tempfile
 import zipfile
 from pathlib import Path
 from datetime import datetime
@@ -62,6 +63,20 @@ STYLE_NAME_ALIASES = {
     "subtitle": {"副標題", "subtitle"},
     "normal": {"內文", "正文", "normal", "body text"},
 }
+
+# 越前面越優先。集合沒有順序，後出現的 Body Text 會蓋掉先讀到的 Normal／內文。
+STYLE_ALIAS_PRIORITY = {
+    "heading1": ["標題 1", "標題1", "heading 1", "heading1"],
+    "heading2": ["標題 2", "標題2", "heading 2", "heading2"],
+    "subtitle": ["副標題", "subtitle"],
+    "normal": ["內文", "正文", "normal", "body text"],
+}
+
+
+def _alias_priority(internal_key, name_val):
+    """回傳別名優先序，數字越小越優先；不在清單裡的排到最後。"""
+    order = [a.lower() for a in STYLE_ALIAS_PRIORITY.get(internal_key, [])]
+    return order.index(name_val) if name_val in order else 50
 
 FALLBACK_STYLES = {
     # key: 內部代稱；value: 套用屬性
@@ -157,10 +172,15 @@ def extract_named_styles(styles_tree):
                 break
         if internal_key is None:
             continue
+        # 同一個代稱可能對到多個樣式（例如 Normal 與 Body Text 都算 normal）。
+        # 保留優先序較高的那個，避免後出現的 Body Text 蓋掉內文／Normal。
+        prio = _alias_priority(internal_key, name_val)
+        if internal_key in result and result[internal_key].get("_prio", 99) <= prio:
+            continue
 
         rpr = style_el.find(qn("w:rPr"))
         ppr = style_el.find(qn("w:pPr"))
-        entry = {}
+        entry = {"_prio": prio}
         if rpr is not None:
             rfonts = rpr.find(qn("w:rFonts"))
             if rfonts is not None:
@@ -180,6 +200,8 @@ def extract_named_styles(styles_tree):
                 entry["before"] = spacing.get(qn("w:before"))
                 entry["after"] = spacing.get(qn("w:after"))
         result[internal_key] = entry
+    for entry in result.values():
+        entry.pop("_prio", None)
     return result
 
 
@@ -245,14 +267,16 @@ def apply_style_to_target(styles_tree, internal_key, props, report):
     """把 props（來自範本或 fallback）寫進原始檔 styles.xml 對應的具名樣式。"""
     root = styles_tree.getroot()
     target_style_el = None
+    best_prio = 99
     for style_el in root.findall(qn("w:style")):
         name_el = style_el.find(qn("w:name"))
         if name_el is None:
             continue
         name_val = (name_el.get(qn("w:val")) or "").strip().lower()
         if name_val in {a.lower() for a in STYLE_NAME_ALIASES[internal_key]}:
-            target_style_el = style_el
-            break
+            prio = _alias_priority(internal_key, name_val)
+            if target_style_el is None or prio < best_prio:
+                target_style_el, best_prio = style_el, prio
     if target_style_el is None:
         report.add_warning(f"原始檔找不到具名樣式「{internal_key}」，已略過（無法套用外觀）。")
         return
@@ -642,7 +666,8 @@ def main():
 
     report = Report()
 
-    work_root = Path("/tmp/docx_reference_format_work")
+    # 固定路徑會讓兩次執行共用同一個暫存資料夾，後啟動的會清掉先啟動的解壓內容。
+    work_root = Path(tempfile.mkdtemp(prefix="docx_reference_format_"))
     ref_workdir = DocxWorkdir(args.reference, work_root / "reference")
     orig_workdir = DocxWorkdir(args.original, work_root / "original")
 
