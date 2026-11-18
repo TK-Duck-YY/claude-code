@@ -44,3 +44,14 @@
 **同時修正**：
 - Path C 的安裝檢查改以系統查詢為主（`computer_list_apps` 用廠商關鍵字查、`computer_resolve_access` 看 `didYouMean`），App 清冊降為線索：清冊只掃應用程式資料夾往下一層，會漏掉裝得更深的 App 與裝在 `~/Library` 的元件。
 - 保護區刪除改用實測可行的背景方法（Go → Library、展開三角形、核對路徑列、File → Move to Trash），全螢幕控制降為備案。
+
+## 2026-11-18 倉庫改為公開，開放多 AI 共同維護（修改者：Claude）
+
+**決定**：倉庫改為公開（由擁有者在 GitHub 設定頁操作）；新增 `AGENTS.md` 作為所有 AI 協作者的共同規則，新增 MIT `LICENSE`。
+
+**原因**：讓 Gemini、Grok Bot 等其他 AI 工具能讀取並與 Claude 共同維護 skill；內容為工作流程助手，擁有者評估不涉機密。多個 AI 同時修改需要統一規則（繁中、結構、分支加 PR、紀錄格式、隱私禁區），避免互相覆蓋。
+
+**放棄的選項**：
+- 維持私人、各 AI 用唯讀權杖存取：Gemini 環境無法使用私人 repo 權限。
+- 打包 zip 手動上傳給各 AI：無法共同維護。
+- 公開但不加 LICENSE：法律上他人無權使用內容。
