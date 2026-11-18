@@ -194,19 +194,35 @@ slide.addText(title, {
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
+from pptx.opc.constants import RELATIONSHIP_TYPE as RT
 import copy
+import io
 
 BANNER_X, BANNER_Y = Inches(0.6688), Inches(0.18)
 BANNER_W, BANNER_H = Inches(8.7411), Inches(0.6562)
 
 def append_slides_with_banner(base_prs, append_path, slide_title=""):
+    """接上另一份簡報，並在每張上方加上黃色 Banner。
+    只複製形狀時，圖片檔不會跟著走，重新打開會找不到圖。
+    這裡會把圖片一併複製，並把新的關聯編號寫回形狀。
+    """
     append_prs = Presentation(append_path)
     for slide in append_prs.slides:
         layout = base_prs.slide_layouts[0]
         new_slide = base_prs.slides.add_slide(layout)
         new_slide.shapes._spTree[:] = []
+        rid_map = {}
+        for rId, rel in slide.part.rels.items():
+            if rel.reltype == RT.IMAGE:
+                _, new_rid = new_slide.part.get_or_add_image_part(io.BytesIO(rel.target_part.blob))
+                rid_map[rId] = new_rid
         for shape in slide.shapes:
-            new_slide.shapes._spTree.append(copy.deepcopy(shape._element))
+            el = copy.deepcopy(shape._element)
+            for node in el.iter():
+                for attr, value in list(node.attrib.items()):
+                    if value in rid_map and attr.endswith(("}embed", "}link", "}id")):
+                        node.set(attr, rid_map[value])
+            new_slide.shapes._spTree.append(el)
         bg = new_slide.shapes.add_shape(1, BANNER_X, BANNER_Y, BANNER_W, BANNER_H)
         bg.fill.solid()
         bg.fill.fore_color.rgb = RGBColor(0xFF, 0xFF, 0x00)
