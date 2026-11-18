@@ -1,12 +1,13 @@
 # Cowork Skill 倉庫
 
-個人 Cowork skill 的版本控管倉庫（私人 repo）。只存放 skill 本身（說明文件、腳本、測試情境），不含任何使用 skill 處理過的資料。
+個人 Cowork skill 的版本控管倉庫（公開 repo，多個 AI 共同維護；協作規則見 AGENTS.md）。只存放 skill 本身（說明文件、腳本、測試情境），不含任何使用 skill 處理過的資料。
 
 ## 結構
 
 ```
 skills/      自建 skill
 forks/       取自開源專案的 skill（保留原授權檔）
+AGENTS.md    AI 協作者共同規則
 MEMORY.md    決策紀錄
 ERRORS.md    試錯紀錄
 ```
