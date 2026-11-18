@@ -7,8 +7,8 @@ import json
 import sys
 from pathlib import Path
 
-# Add scripts directory to path
-sys.path.insert(0, str(Path(__file__).parent / 'scripts'))
+# 本檔與 pdf_to_jpeg.py 在同一個資料夾。再往下一層 scripts 會找不到模組。
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from pdf_to_jpeg import convert_pdf_to_jpeg, check_dependencies
 
